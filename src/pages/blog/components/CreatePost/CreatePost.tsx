@@ -1,10 +1,10 @@
 import { Fragment, useEffect, useState } from 'react'
 import { Post } from 'types/blogtype'
 import { useDispatch, useSelector } from 'react-redux'
-import { addPost, cancelEditPost, finishEditPost } from 'pages/blog/blog.reducer'
+import { addPost, cancelEditPost, finishEditPost } from 'pages/blog/blog.slice'
 import { RootState } from 'store'
 
-const initiaState: Post = {
+const initialState: Post = {
   id: '',
   title: '',
   description: '',
@@ -14,12 +14,12 @@ const initiaState: Post = {
 }
 
 export default function CreatePost() {
-  const [formData, setFormData] = useState<Post>(initiaState)
+  const [formData, setFormData] = useState<Post>(initialState)
   const dispatch = useDispatch()
   const postEdit = useSelector((state: RootState) => state.blog.postEdit)
 
   useEffect(() => {
-    setFormData(postEdit || initiaState)
+    setFormData(postEdit || initialState)
   }, [postEdit])
 
   const handleOnSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -30,7 +30,7 @@ export default function CreatePost() {
       const formDataWithId = { ...formData, id: new Date().toISOString() }
       dispatch(addPost(formDataWithId))
     }
-    setFormData(initiaState)
+    setFormData(initialState)
   }
 
   const handleCancelEdit = () => {
