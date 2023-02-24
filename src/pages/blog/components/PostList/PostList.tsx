@@ -2,10 +2,12 @@ import PostItem from '../PostItem'
 import { useSelector } from 'react-redux'
 import { RootState, useAppDispatch } from 'store'
 import { deletePost, getPostList, startEditPost } from 'pages/blog/blog.slice'
-import { useEffect } from 'react'
+import { Fragment, useEffect } from 'react'
+import SkeletonLoading from '../SkeletonLoading'
 export default function PostList() {
   const postList = useSelector((state: RootState) => state.blog.postList)
   const dispatch = useAppDispatch()
+  const loading = useSelector((state: RootState) => state.blog.loading)
 
   // get API
   useEffect(() => {
@@ -29,11 +31,24 @@ export default function PostList() {
             Đừng bao giờ từ bỏ. Hôm nay khó khăn, ngày mai sẽ trở nên tồi tệ. Nhưng ngày mốt sẽ có nắng
           </p>
         </div>
-        <div className='grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-2 xl:grid-cols-2 xl:gap-8'>
-          {postList.map((post) => (
-            <PostItem key={post.id} post={post} handleRemove={handleRemove} handleStartEditPost={handleStartEditPost} />
-          ))}
-        </div>
+        {loading && (
+          <Fragment>
+            <SkeletonLoading />
+          </Fragment>
+        )}
+
+        {!loading && (
+          <div className='grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-2 xl:grid-cols-2 xl:gap-8'>
+            {postList.map((post) => (
+              <PostItem
+                key={post.id}
+                post={post}
+                handleRemove={handleRemove}
+                handleStartEditPost={handleStartEditPost}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

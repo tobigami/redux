@@ -1,16 +1,26 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice, current, AsyncThunk } from '@reduxjs/toolkit'
 import { Post } from 'types/blogtype'
 import { PayloadAction } from '@reduxjs/toolkit'
 import http from 'utils/http'
 interface BlogState {
   postList: Post[]
   postEdit: Post | null
+  loading: boolean
+  currentRequestId: string | undefined
 }
 
 const initialState: BlogState = {
   postList: [],
-  postEdit: null
+  postEdit: null,
+  loading: false,
+  currentRequestId: undefined
 }
+
+type GenericAsyncThunk = AsyncThunk<unknown, unknown, any>
+
+type PendingAction = ReturnType<GenericAsyncThunk['pending']>
+type RejectedAction = ReturnType<GenericAsyncThunk['rejected']>
+type FulfilledAction = ReturnType<GenericAsyncThunk['fulfilled']>
 
 export const getPostList = createAsyncThunk('blog/getPostList', async (_, thunkAPI) => {
   const res = await http.get<Post[]>('posts', {
@@ -85,8 +95,6 @@ export const blogSlice = createSlice({
         state.postList.find((post, index) => {
           if (post.id === id) {
             state.postList[index] = action.payload
-            // post = action.payload
-            // console.log(post)
             return true
           }
           return false
@@ -99,6 +107,31 @@ export const blogSlice = createSlice({
           state.postList.splice(index, 1)
         }
       })
+      .addMatcher<PendingAction>(
+        (action) => action.type.endsWith('pending'),
+        (state, action) => {
+          state.loading = true
+          state.currentRequestId = action.meta.requestId
+        }
+      )
+      .addMatcher<RejectedAction>(
+        (action) => action.type.endsWith('rejected'),
+        (state, action) => {
+          if (state.currentRequestId === action.meta.requestId) {
+            state.loading = false
+            state.currentRequestId = undefined
+          }
+        }
+      )
+      .addMatcher<FulfilledAction>(
+        (action) => action.type.endsWith('fulfilled'),
+        (state, action) => {
+          if (state.currentRequestId === action.meta.requestId) {
+            state.loading = false
+            state.currentRequestId = undefined
+          }
+        }
+      )
   }
 })
 
@@ -106,39 +139,3 @@ export const { removePost, startEditPost, cancelEditPost, finishEditPost } = blo
 
 const blogReducer = blogSlice.reducer
 export default blogReducer
-
-// export const addPost = createAction<Post>('blog/addPost')
-// export const removePost = createAction<string>('blog/remove')
-// export const startEditPost = createAction<string>('blog/startEdit')
-// export const cancelEditPost = createAction('blog/cancelEdit')
-// export const finishEditPost = createAction<Post>('blog/finishEdit')
-
-// const blogReducer = createReducer(initialState, (builderCallback) => {
-//   builderCallback
-//     .addCase(addPost, (state, action) => {
-//       state.postList.push(action.payload)
-//     })
-//     .addCase(removePost, (state, actions) => {
-//       const postId = actions.payload
-//       const index = state.postList.findIndex((post) => post.id === postId)
-//       if (index !== -1) {
-//         state.postList.splice(index, 1)
-//       }
-//     })
-//     .addCase(startEditPost, (state, action) => {
-//       const id = action.payload
-//       const postEdit = state.postList.find((post) => post.id === id) || null
-//       state.postEdit = postEdit
-//     })
-//     .addCase(cancelEditPost, (state) => {
-//       state.postEdit = null
-//     })
-//     .addCase(finishEditPost, (state, action) => {
-//       const id = action.payload.id
-//       const index = state.postList.findIndex((post) => post.id === id)
-//       if (index > -1) {
-//         state.postList[index] = action.payload
-//       }
-//       state.postEdit = null
-//     })
-// })
